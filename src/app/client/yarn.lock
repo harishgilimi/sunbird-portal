@@ -635,10 +635,10 @@
   dependencies:
     tslib "^1.9.0"
 
-"@project-sunbird/telemetry-sdk@^0.0.25":
-  version "0.0.25"
-  resolved "https://registry.yarnpkg.com/@project-sunbird/telemetry-sdk/-/telemetry-sdk-0.0.25.tgz#78d0a2ea4507bca99311c790a79b3fdc26dfa851"
-  integrity sha512-dR9MgYqQeDV63UR4km09wGOxbwzvULyEcG1f3SeV4iESNsIhi/l2Hwya0TwLPa4sb/sTQkq8CGODDZam1WXspA==
+"@project-sunbird/telemetry-sdk@^0.0.26":
+  version "0.0.26"
+  resolved "https://registry.yarnpkg.com/@project-sunbird/telemetry-sdk/-/telemetry-sdk-0.0.26.tgz#15a7776e0d94da3c844161b1400612303756a830"
+  integrity sha512-8r8tf+YN+z8A4KHBmL8/wxDIKGkASDHMMxyhlI9/iWv83sueoN5qHB6QnqgtIRyEdFjt4Tum5u18/oB71Bb0PQ==
   dependencies:
     grunt-karma "^0.12.2"
     karma "^3.0.0"
