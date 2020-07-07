@@ -4,7 +4,7 @@ import { PlayerComponent } from './player.component';
 import { NO_ERRORS_SCHEMA } from '@angular/core';
 import { RouterTestingModule } from '@angular/router/testing';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
-import { Subject } from 'rxjs';
+import { Subject, of } from 'rxjs';
 import { configureTestSuite } from '@sunbird/test-util';
 import { UserService } from '../../../core/services';
 
@@ -46,7 +46,7 @@ describe('PlayerComponent', () => {
     TestBed.configureTestingModule({
       imports: [SharedModule.forRoot(), RouterTestingModule, HttpClientTestingModule],
       declarations: [PlayerComponent],
-      providers: [{provide: UserService, useValue: {}}],
+      providers: [{ provide: UserService, useValue: {} }],
       schemas: [NO_ERRORS_SCHEMA]
     })
       .compileComponents();
@@ -209,6 +209,40 @@ describe('PlayerComponent', () => {
     };
     component.ngOnDestroy();
     expect(component.contentIframe.nativeElement.remove).toHaveBeenCalled();
+  });
+
+  it('should make isFullScreenView to TRUE', () => {
+    component.isFullScreenView = false;
+    expect(component.isFullScreenView).toBeFalsy();
+    spyOn(component['navigationHelperService'], 'contentFullScreenEvent').and.returnValue(of(true));
+    component.ngOnInit();
+    component.navigationHelperService.contentFullScreenEvent.subscribe(response => {
+      expect(response).toBeTruthy();
+      expect(component.isFullScreenView).toBeTruthy();
+    });
+  });
+
+  it('should make isFullScreenView to FALSE', () => {
+    component.isFullScreenView = true;
+    expect(component.isFullScreenView).toBeTruthy();
+    spyOn(component['navigationHelperService'], 'contentFullScreenEvent').and.returnValue(of(false));
+    component.ngOnInit();
+    component.navigationHelperService.contentFullScreenEvent.subscribe(response => {
+      expect(response).toBeFalsy();
+      expect(component.isFullScreenView).toBeFalsy();
+    });
+  });
+
+  it('should call emitFullScreenEvent', () => {
+    spyOn(component.navigationHelperService, 'emitFullScreenEvent');
+    component.closeContentFullScreen();
+    expect(component.navigationHelperService.emitFullScreenEvent).toHaveBeenCalledWith(false);
+  });
+
+  it('should call closeModal', () => {
+    spyOn(component.ratingPopupClose, 'emit');
+    component.closeModal();
+    expect(component.ratingPopupClose.emit).toHaveBeenCalled();
   });
 
 });

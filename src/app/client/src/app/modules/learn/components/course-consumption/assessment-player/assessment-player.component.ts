@@ -11,7 +11,7 @@ import { ConfigService, ResourceService, ToasterService, NavigationHelperService
 import * as _ from 'lodash-es';
 import { combineLatest, Observable, Subject } from 'rxjs';
 import { first, map, takeUntil } from 'rxjs/operators';
-import { CsCourseProgressCalculator } from '@project-sunbird/client-services/services/course/utilities/course-progress-calculator';
+import { CsContentProgressCalculator } from '@project-sunbird/client-services/services/content/utilities/content-progress-calculator';
 import * as TreeModel from 'tree-model';
 const ACCESSEVENT = 'renderer:question:submitscore';
 
@@ -49,6 +49,10 @@ export class AssessmentPlayerComponent implements OnInit, OnDestroy {
   telemetryShareData: Array<ITelemetryShare>;
   shareLinkModal: boolean;
   isUnitCompleted = false;
+  isFullScreenView = false;
+  isCourseCompleted = false;
+  showCourseCompleteMessage = false;
+  parentCourse;
 
   constructor(
     public resourceService: ResourceService,
@@ -73,6 +77,10 @@ export class AssessmentPlayerComponent implements OnInit, OnDestroy {
 
   ngOnInit() {
     this.subscribeToQueryParam();
+    this.navigationHelperService.contentFullScreenEvent.
+    pipe(takeUntil(this.unsubscribe)).subscribe(isFullScreen => {
+      this.isFullScreenView = isFullScreen;
+    });
   }
 
   goBack() {
@@ -101,6 +109,8 @@ export class AssessmentPlayerComponent implements OnInit, OnDestroy {
             .subscribe((data) => {
               const model = new TreeModel();
               this.treeModel = model.parse(data.courseHierarchy);
+              this.parentCourse = data.courseHierarchy;
+              this.getCourseCompletionStatus();
               if (!this.isParentCourse && data.courseHierarchy.children) {
                 this.courseHierarchy = data.courseHierarchy.children.find(item => item.identifier === this.collectionId);
               } else {
@@ -149,6 +159,31 @@ export class AssessmentPlayerComponent implements OnInit, OnDestroy {
     }));
   }
 
+  getCourseCompletionStatus(showPopup: boolean = false) {
+    /* istanbul ignore else */
+    if (!this.isCourseCompleted) {
+      const req = this.getContentStateRequest(this.parentCourse);
+      this.courseConsumptionService.getContentState(req)
+        .pipe(takeUntil(this.unsubscribe))
+        .subscribe(res => {
+          /* istanbul ignore else */
+          if (_.get(res, 'content.length')) {
+            this.isCourseCompleted = _.every(res.content, ['status', 2]);
+            this.showCourseCompleteMessage = this.isCourseCompleted && showPopup;
+          }
+
+        }, err => console.error(err, 'content read api failed'));
+    }
+  }
+
+  getContentStateRequest(course: any) {
+    return {
+      userId: this.userService.userid,
+      courseId: this.courseId,
+      contentIds: this.courseConsumptionService.parseChildren(course),
+      batchId: this.batchId
+    };
+  }
   setActiveContent(selectedContent: string, isSingleContent?: boolean) {
     if (_.get(this.courseHierarchy, 'children')) {
       const flattenDeepContents = this.courseConsumptionService.flattenDeep(this.courseHierarchy.children);
@@ -215,12 +250,7 @@ export class AssessmentPlayerComponent implements OnInit, OnDestroy {
   }
 
   private getContentState() {
-    const req = {
-      userId: this.userService.userid,
-      courseId: this.courseId,
-      contentIds: this.courseConsumptionService.parseChildren(this.courseHierarchy),
-      batchId: this.batchId
-    };
+    const req = this.getContentStateRequest(this.courseHierarchy);
     this.courseConsumptionService.getContentState(req)
       .pipe(takeUntil(this.unsubscribe))
       .subscribe(res => {
@@ -300,7 +330,7 @@ export class AssessmentPlayerComponent implements OnInit, OnDestroy {
   private validEndEvent(event) {
     const playerSummary: Array<any> = _.get(event, 'detail.telemetryData.edata.summary');
     const contentMimeType = this.activeContent.mimeType;
-    this.courseProgress = CsCourseProgressCalculator.calculate(playerSummary, contentMimeType);
+    this.courseProgress = CsContentProgressCalculator.calculate(playerSummary, contentMimeType);
     return this.courseProgress;
   }
 
@@ -441,7 +471,8 @@ export class AssessmentPlayerComponent implements OnInit, OnDestroy {
       'object': {
         'id': this.batchId,
         'type': this.activatedRoute.snapshot.data.telemetry.object.type,
-        'ver': this.activatedRoute.snapshot.data.telemetry.object.ver
+        'ver': this.activatedRoute.snapshot.data.telemetry.object.ver,
+        'rollup': { l1: this.courseId }
       },
       'edata': {
         props: ['courseId', 'userId', 'batchId'],
@@ -470,6 +501,11 @@ export class AssessmentPlayerComponent implements OnInit, OnDestroy {
     this.shareLink = this.contentUtilsServiceService.getCourseModulePublicShareUrl(this.courseId, this.collectionId);
     this.setTelemetryShareData(this.courseHierarchy);
   }
+
+  onRatingPopupClose() {
+    this.getCourseCompletionStatus(true);
+  }
+
   setTelemetryShareData(param) {
     this.telemetryShareData = [{
       id: param.identifier,
