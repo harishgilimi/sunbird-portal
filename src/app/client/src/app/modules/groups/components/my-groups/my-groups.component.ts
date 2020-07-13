@@ -1,41 +1,63 @@
 import { UserService } from '@sunbird/core';
-import { IGroupSearchRequest, IGroupCard } from './../../interfaces';
-import { GROUP_DETAILS, MY_GROUPS, CREATE_GROUP } from './../routerLinks';
-import { Component, OnInit } from '@angular/core';
+import { IGroupSearchRequest, IGroupCard, GROUP_DETAILS, MY_GROUPS, CREATE_GROUP } from './../../interfaces';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { GroupsService } from '../../services';
 import { ResourceService } from '@sunbird/shared';
-import { Router } from '@angular/router';
+import { Router, ActivatedRoute } from '@angular/router';
 import * as _ from 'lodash-es';
+import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
+import { IImpressionEventInput } from '@sunbird/telemetry';
+
 @Component({
   selector: 'app-my-groups',
   templateUrl: './my-groups.component.html',
   styleUrls: ['./my-groups.component.scss']
 })
-export class MyGroupsComponent implements OnInit {
+export class MyGroupsComponent implements OnInit, OnDestroy {
   showGroupCreateForm = false;
-  public groupList: IGroupCard[] = [];
+  adminGroupsList: IGroupCard[] = [];
+  memberGroupsList: IGroupCard[] = [];
   public showModal = false;
-  constructor(public groupService: GroupsService, public router: Router, public resourceService: ResourceService,
-    private userService: UserService) {
-  }
+  private unsubscribe$ = new Subject<void>();
+  telemetryImpression: IImpressionEventInput;
+  isLoader = true;
+  constructor(public groupService: GroupsService,
+    public router: Router,
+    public resourceService: ResourceService,
+    private userService: UserService,
+    private activatedRoute: ActivatedRoute
+    ) { }
 
   ngOnInit() {
     this.showModal = !localStorage.getItem('login_ftu_groups');
     this.getMyGroupList();
+    this.groupService.closeForm.pipe(takeUntil(this.unsubscribe$)).subscribe(() => {
+      this.getMyGroupList();
+    });
+    this.telemetryImpression = this.groupService.getImpressionObject(this.activatedRoute.snapshot, this.router.url);
   }
 
+
   getMyGroupList() {
+    this.isLoader = true;
+    this.adminGroupsList = [];
+    this.memberGroupsList = [];
     const request: IGroupSearchRequest = {filters: {userId: this.userService.userid}};
-    this.groupService.searchUserGroups(request).subscribe(groups => {
+    this.groupService.searchUserGroups(request).pipe(takeUntil(this.unsubscribe$)).subscribe(groups => {
+      this.isLoader = false;
       _.forEach(groups, (group) => {
         if (group) {
-          group.isAdmin = (group.createdBy === this.userService.userid);
-          group.initial = group.name[0];
-          this.groupList.push(group);
+          group = this.groupService.addGroupFields(group);
+          group.isAdmin ? this.adminGroupsList.push(group) : this.memberGroupsList.push(group);
         }
       });
+      this.adminGroupsList = _.uniqBy(_.orderBy(this.adminGroupsList, 'createdOn'), 'id');
+      this.memberGroupsList = _.uniqBy(_.orderBy(this.memberGroupsList, 'createdOn'), 'id');
     }, (err) => {
-      this.groupList = [];
+      this.isLoader = false;
+      this.adminGroupsList = [];
+      this.memberGroupsList = [];
     });
   }
 
@@ -44,6 +66,7 @@ export class MyGroupsComponent implements OnInit {
   }
 
   public navigateToDetailPage(event) {
+    this.addTelemetry('group-card', _.get(event, 'data.id'));
     this.router.navigate([`${MY_GROUPS}/${GROUP_DETAILS}`, _.get(event, 'data.id')]);
   }
 
@@ -56,4 +79,12 @@ export class MyGroupsComponent implements OnInit {
     localStorage.setItem('login_ftu_groups', 'login_user');
   }
 
+  addTelemetry (id, groupId?) {
+    this.groupService.addTelemetry(id, this.activatedRoute.snapshot, [], groupId);
+  }
+
+  ngOnDestroy() {
+    this.unsubscribe$.next();
+    this.unsubscribe$.complete();
+  }
 }

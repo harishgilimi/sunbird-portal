@@ -1,24 +1,38 @@
+import { IGroupMember } from './../../interfaces/group';
 import { SuiModule } from 'ng2-semantic-ui';
 import { async, ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { GroupMembersComponent } from './group-members.component';
 import { CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
-import { ResourceService, SharedModule } from '@sunbird/shared';
+import { ResourceService, SharedModule, ToasterService } from '@sunbird/shared';
 import { SlickModule } from 'ngx-slick';
 import { TelemetryModule } from '@sunbird/telemetry';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { CoreModule } from '@sunbird/core';
 import { Router, ActivatedRoute } from '@angular/router';
 import { configureTestSuite } from '@sunbird/test-util';
+import { of, throwError } from 'rxjs';
+import { GroupsService } from '../../services/groups/groups.service';
+import { GroupEntityStatus } from '@project-sunbird/client-services/models/group';
 
 describe('GroupMembersComponent', () => {
   let component: GroupMembersComponent;
   let fixture: ComponentFixture<GroupMembersComponent>;
-
+  let members: IGroupMember[] = [];
   const resourceBundle = {
     'messages': {
       'fmsg': {
         'm0085': 'There is some technical error',
+      },
+      'smsg': {
+        'promoteAsAdmin': '{memberName} is admin now',
+        'dissmissAsAdmin': '{memberName} is no more admin now',
+        'removeMember': '{memberName} is no longer part of the group'
+      },
+      'emsg': {
+        'promoteAsAdmin': 'Unable to make {memberName} as admin',
+        'dissmissAsAdmin': 'Unable to demote as an admin',
+        'removeMember': 'Unable to remove member from the group, please try again'
       }
     },
     'frmelmnts': {
@@ -57,19 +71,30 @@ describe('GroupMembersComponent', () => {
   beforeEach(() => {
     fixture = TestBed.createComponent(GroupMembersComponent);
     component = fixture.componentInstance;
+    members = [
+      {
+        identifier: '1', initial: 'J', title: 'John Doe', isAdmin: true, isMenu: false,
+        indexOfMember: 1, isCreator: true, name: 'John Doe', userId: '1', role: 'admin'
+      },
+      {
+        identifier: '2', initial: 'P', title: 'Paul Walker', isAdmin: false, isMenu: true,
+        indexOfMember: 5, isCreator: false, name: 'Paul Walke', userId: '2', role: 'member'
+      },
+      {
+        identifier: '6', initial: 'R', title: 'Robert Downey', isAdmin: true, isMenu: true,
+        indexOfMember: 7, isCreator: false, name: 'Robert Downey', userId: '3', role: 'member'
+      }
+    ];
+    component['groupsService'].groupData = { id: '123', name: 'Test group', members: members, createdBy: '1' };
+    spyOn(component['groupsService'], 'addFieldsToMember').and.returnValue(members);
+    spyOn(component['groupsService'], 'membersList').and.returnValue(of(members));
     fixture.detectChanges();
   });
 
   it('should create', () => {
-    const members = [
-      { identifier: '1', initial: 'J', title: 'John Doe', isAdmin: true, isMenu: false, indexOfMember: 1, isCreator: true },
-      { identifier: '2', initial: 'P', title: 'Paul Walker', isAdmin: false, isMenu: true, indexOfMember: 5, isCreator: false },
-      { identifier: '6', initial: 'R', title: 'Robert Downey', isAdmin: true, isMenu: true, indexOfMember: 7, isCreator: false }];
-
     const expectedMemberList = members.map(item => { item.isMenu = false; return item; });
     console.log('expectedMemberList', expectedMemberList);
-    component.members = members;
-    component.showMenu = true;
+    component.showKebabMenu = true;
     component.config.showMemberMenu = false;
     document.body.dispatchEvent(new Event('click'));
     component.ngOnInit();
@@ -78,7 +103,7 @@ describe('GroupMembersComponent', () => {
   });
 
   it('should call getMenuData', () => {
-    component.showMenu = false;
+    component.showKebabMenu = false;
     const member = {
       identifier: '2', initial: 'P', title: 'Paul Walker', isAdmin: false, isMenu: true, indexOfMember: 5, isCreator: false
     };
@@ -86,13 +111,16 @@ describe('GroupMembersComponent', () => {
       stopImmediatePropagation: jasmine.createSpy('stopImmediatePropagation')
     };
     component.getMenuData({ data: { name: 'delete' }, event: clickEvent }, member);
-    expect(component.showMenu).toBe(true);
+    expect(component.showKebabMenu).toBe(true);
   });
 
   it('should call search', () => {
     component.showSearchResults = false;
-    const members = [
-      { identifier: '1', initial: 'J', title: 'John Doe', isAdmin: true, isMenu: false, indexOfMember: 1, isCreator: true }
+    members = [
+      {
+        identifier: '1', initial: 'J', title: 'John Doe', isAdmin: true, isMenu: false,
+        indexOfMember: 1, isCreator: true, name: 'John Doe', userId: '1', role: 'admin'
+      },
     ];
     component.members = members;
     component.memberListToShow = [];
@@ -102,8 +130,11 @@ describe('GroupMembersComponent', () => {
 
   it('should reset the list to membersList when no search key present', () => {
     component.showSearchResults = true;
-    const members = [
-      { identifier: '1', initial: 'J', title: 'John Doe', isAdmin: true, isMenu: false, indexOfMember: 1, isCreator: true }
+    members = [
+      {
+        identifier: '1', initial: 'J', title: 'John Doe', isAdmin: true, isMenu: false,
+        indexOfMember: 1, isCreator: true, name: 'John Doe', userId: '1', role: 'admin'
+      },
     ];
     component.members = members;
     component.search('');
@@ -127,7 +158,122 @@ describe('GroupMembersComponent', () => {
     component.onModalClose();
   });
 
-  it('should call onActionConfirm', () => {
-    component.onActionConfirm();
+  it('should call onActionConfirm on promote as admin', () => {
+    spyOn(component, 'promoteMember');
+    const event = { action: 'promoteAsAdmin', data: {} };
+    component.onActionConfirm(event);
+    expect(component.promoteMember).toHaveBeenCalled();
+  });
+
+  it('should call onActionConfirm on remove member', () => {
+    spyOn(component, 'removeMember');
+    const event = { action: 'removeFromGroup', data: {} };
+    component.onActionConfirm(event);
+    expect(component.removeMember).toHaveBeenCalled();
+  });
+
+  it('should call onActionConfirm on dismiss Admin', () => {
+    spyOn(component, 'dismissRole');
+    const event = { action: 'dismissAsAdmin', data: {} };
+    component.onActionConfirm(event);
+    expect(component.dismissRole).toHaveBeenCalled();
+  });
+
+  it('should call promoteMember', () => {
+    const groupsService = TestBed.get(GroupsService);
+    const toasterService = TestBed.get(ToasterService);
+    const data = {
+      userId: 'abcd-pqrs',
+      name: 'John'
+    };
+    spyOn(groupsService, 'updateMembers').and.returnValue(of({}));
+    spyOn(component, 'getUpdatedGroupData');
+    spyOn(toasterService, 'success');
+    component.promoteMember(data);
+    expect(component.getUpdatedGroupData).toHaveBeenCalled();
+    expect(toasterService.success).toHaveBeenCalled();
+  });
+
+  it('should call promoteMember on error', () => {
+    const groupsService = TestBed.get(GroupsService);
+    const toasterService = TestBed.get(ToasterService);
+    const data = {
+      userId: 'abcd-pqrs',
+      name: 'John'
+    };
+    spyOn(groupsService, 'updateMembers').and.returnValue(throwError({}));
+    spyOn(component, 'getUpdatedGroupData');
+    spyOn(toasterService, 'error');
+    component.promoteMember(data);
+    expect(toasterService.error).toHaveBeenCalled();
+  });
+
+  it('should call removeMember', () => {
+    const groupsService = TestBed.get(GroupsService);
+    const toasterService = TestBed.get(ToasterService);
+    const data = {
+      userId: 'abcd-pqrs',
+      name: 'John'
+    };
+    spyOn(groupsService, 'removeMembers').and.returnValue(of({}));
+    spyOn(component, 'getUpdatedGroupData');
+    spyOn(toasterService, 'success');
+    component.removeMember(data);
+    expect(component.getUpdatedGroupData).toHaveBeenCalled();
+    expect(toasterService.success).toHaveBeenCalled();
+  });
+
+  it('should call removeMember error', () => {
+    const groupsService = TestBed.get(GroupsService);
+    const toasterService = TestBed.get(ToasterService);
+    const data = {
+      userId: 'abcd-pqrs',
+      name: 'John'
+    };
+    spyOn(groupsService, 'removeMembers').and.returnValue(throwError({}));
+    spyOn(component, 'getUpdatedGroupData');
+    spyOn(toasterService, 'error');
+    component.removeMember(data);
+    expect(toasterService.error).toHaveBeenCalled();
+  });
+
+  it('should call dismissRole', () => {
+    const groupsService = TestBed.get(GroupsService);
+    const toasterService = TestBed.get(ToasterService);
+    const data = {
+      userId: 'abcd-pqrs',
+      name: 'John'
+    };
+    spyOn(groupsService, 'updateMembers').and.returnValue(of({}));
+    spyOn(component, 'getUpdatedGroupData');
+    spyOn(toasterService, 'success');
+    component.dismissRole(data);
+    expect(component.getUpdatedGroupData).toHaveBeenCalled();
+    expect(toasterService.success).toHaveBeenCalled();
+  });
+
+  it('should call dismissRole error', () => {
+    const groupsService = TestBed.get(GroupsService);
+    const toasterService = TestBed.get(ToasterService);
+    const data = {
+      userId: 'abcd-pqrs',
+      name: 'John'
+    };
+    spyOn(groupsService, 'updateMembers').and.returnValue(throwError({}));
+    spyOn(toasterService, 'error');
+    component.dismissRole(data);
+    expect(toasterService.error).toHaveBeenCalled();
+  });
+
+  it('should call getUpdatedGroupData', () => {
+    const response = {
+      id: '123', name: 'Test', members:
+        [{ userId: '2', role: 'member', name: 'user' }, { userId: '1', role: 'admin', name: 'user 2' }]
+    };
+    component.groupData = { id: 'asbcd-hsdhois', name: 'Test', isAdmin: true, status: GroupEntityStatus.ACTIVE };
+    spyOn(component['groupsService'], 'getGroupById').and.returnValue(of(response));
+    component.getUpdatedGroupData();
+    expect(component.groupData).toBeDefined();
+    expect(component.memberListToShow).toBeDefined();
   });
 });

@@ -1,4 +1,4 @@
-import { Component, OnDestroy, ViewChild } from '@angular/core';
+import { Component, OnDestroy, ViewChild, Input, Output, EventEmitter } from '@angular/core';
 import { ResourceService } from '@sunbird/shared';
 import { TelemetryService, IInteractEventInput } from '@sunbird/telemetry';
 import * as _ from 'lodash-es';
@@ -12,6 +12,8 @@ import { ActivatedRoute } from '@angular/router';
 export class CourseCompletionComponent implements OnDestroy {
 
   @ViewChild('modal') modal;
+  @Input() isCertificateAttached;
+  @Output() close = new EventEmitter<void>();
   constructor(
     public resourceService: ResourceService,
     private telemetryService: TelemetryService,
@@ -20,11 +22,11 @@ export class CourseCompletionComponent implements OnDestroy {
 
   closeModal() {
     /* istanbul ignore else */
-    if (_.get(this.modal.deny)) {
+    if (_.get(this.modal, 'deny')) {
       this.modal.deny();
+      this.logInteractTelemetry();
+      this.close.emit();
     }
-
-    this.logInteractTelemetry();
   }
 
   logInteractTelemetry() {
