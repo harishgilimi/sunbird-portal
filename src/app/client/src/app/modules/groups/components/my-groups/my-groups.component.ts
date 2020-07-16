@@ -46,14 +46,15 @@ export class MyGroupsComponent implements OnInit, OnDestroy {
     const request: IGroupSearchRequest = {filters: {userId: this.userService.userid}};
     this.groupService.searchUserGroups(request).pipe(takeUntil(this.unsubscribe$)).subscribe(groups => {
       this.isLoader = false;
+      groups = this.groupService.addGroupPaletteList(groups || []);
       _.forEach(groups, (group) => {
         if (group) {
           group = this.groupService.addGroupFields(group);
           group.isAdmin ? this.adminGroupsList.push(group) : this.memberGroupsList.push(group);
         }
       });
-      this.adminGroupsList = _.uniqBy(_.orderBy(this.adminGroupsList, 'createdOn'), 'id');
-      this.memberGroupsList = _.uniqBy(_.orderBy(this.memberGroupsList, 'createdOn'), 'id');
+      this.adminGroupsList = _.uniqBy(_.orderBy(this.adminGroupsList, ['createdOn'], ['desc']), 'id');
+      this.memberGroupsList = _.uniqBy(_.orderBy(this.memberGroupsList, ['createdOn', ['desc']]), 'id');
     }, (err) => {
       this.isLoader = false;
       this.adminGroupsList = [];

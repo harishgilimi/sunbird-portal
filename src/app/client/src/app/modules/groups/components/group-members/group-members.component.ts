@@ -34,6 +34,7 @@ export class GroupMembersComponent implements OnInit, OnDestroy {
   selectedMember: IGroupMember;
   private unsubscribe$ = new Subject<void>();
   groupId;
+  showLoader = false;
   memberCardConfig = { size: 'small', isBold: false, isSelectable: false, view: 'horizontal' };
 
   constructor(
@@ -45,13 +46,9 @@ export class GroupMembersComponent implements OnInit, OnDestroy {
   ) { }
 
   ngOnInit() {
-    const groupData = this.groupsService.groupData;
-    this.members = this.groupsService.addFieldsToMember(_.get(groupData, 'members') || []);
-    this.memberListToShow = this.members;
+    this.members = this.groupsService.addFieldsToMember(_.get(this.groupData, 'members'));
+    this.memberListToShow = _.cloneDeep(this.members);
     this.groupId = _.get(this.activatedRoute, 'snapshot.params.groupId');
-
-    this.memberListToShow.forEach(item => item.isMenu =
-      ((groupData.createdBy === item.userId) ? false : this.config.showMemberMenu));
     this.hideMemberMenu();
 
     fromEvent(document, 'click')
@@ -59,8 +56,12 @@ export class GroupMembersComponent implements OnInit, OnDestroy {
       .subscribe(item => {
         if (this.showKebabMenu) {
           this.showKebabMenu = false;
+          this.addTelemetry('member-card-menu-close');
         }
       });
+    this.groupsService.showLoader.subscribe(showLoader => {
+      this.showLoader = showLoader;
+    });
 
     this.groupsService.membersList.subscribe(members => {
       this.memberListToShow = members;
@@ -77,6 +78,7 @@ export class GroupMembersComponent implements OnInit, OnDestroy {
 
   getMenuData(event, member) {
     this.showKebabMenu = !this.showKebabMenu;
+    this.showKebabMenu ? this.addTelemetry('member-card-menu-show') : this.addTelemetry('member-card-menu-close');
     this.selectedMember = member;
     event.event.stopImmediatePropagation();
   }
@@ -85,6 +87,7 @@ export class GroupMembersComponent implements OnInit, OnDestroy {
     if (searchKey.trim().length) {
       this.showSearchResults = true;
       this.memberListToShow = this.members.filter(item => _.toLower(item.title).includes(searchKey));
+      this.addTelemetry('group-member-search-input', { query: searchKey });
     } else {
       this.showSearchResults = false;
       this.memberListToShow = _.cloneDeep(this.members);
@@ -131,6 +134,7 @@ export class GroupMembersComponent implements OnInit, OnDestroy {
   }
 
   promoteMember(data) {
+    this.showLoader = true;
     const memberReq = {
       members: [{
         userId: _.get(data, 'userId'),
@@ -138,23 +142,29 @@ export class GroupMembersComponent implements OnInit, OnDestroy {
       }]
     };
     this.groupsService.updateMembers(this.groupId, memberReq).pipe(takeUntil(this.unsubscribe$)).subscribe(res => {
+      this.showLoader = false;
       this.getUpdatedGroupData();
       this.toasterService.success(_.replace(this.resourceService.messages.smsg.promoteAsAdmin, '{memberName}', _.get(data, 'name')));
     }, error => {
+      this.showLoader = false;
       this.toasterService.error(_.replace(this.resourceService.messages.emsg.promoteAsAdmin, '{memberName}', _.get(data, 'name')));
     });
   }
 
   removeMember(data) {
+    this.showLoader = true;
     this.groupsService.removeMembers(this.groupId, [_.get(data, 'userId')]).pipe(takeUntil(this.unsubscribe$)).subscribe(res => {
+      this.showLoader = false;
       this.getUpdatedGroupData();
       this.toasterService.success(_.replace(this.resourceService.messages.smsg.removeMember, '{memberName}', _.get(data, 'name')));
     }, error => {
+      this.showLoader = false;
       this.toasterService.error(this.resourceService.messages.emsg.removeMember);
     });
   }
 
   dismissRole(data) {
+    this.showLoader = true;
     const req = {
       members: [{
         userId: _.get(data, 'userId'),
@@ -162,15 +172,17 @@ export class GroupMembersComponent implements OnInit, OnDestroy {
       }]
     };
     this.groupsService.updateMembers(this.groupId, req).pipe(takeUntil(this.unsubscribe$)).subscribe(res => {
+      this.showLoader = false;
       this.getUpdatedGroupData();
       this.toasterService.success(_.replace(this.resourceService.messages.smsg.dissmissAsAdmin, '{memberName}', _.get(data, 'name')));
     }, error => {
+      this.showLoader = false;
       this.toasterService.error(this.resourceService.messages.emsg.dissmissAsAdmin);
     });
   }
 
-  addTelemetry(id) {
-    this.groupsService.addTelemetry(id, this.activatedRoute.snapshot, []);
+  addTelemetry(id, extra?) {
+    this.groupsService.addTelemetry(id, this.activatedRoute.snapshot, [], this.groupId, extra);
   }
 
   ngOnDestroy() {
