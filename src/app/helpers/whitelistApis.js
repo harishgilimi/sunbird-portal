@@ -122,11 +122,15 @@ const API_LIST = {
       ROLE_CHECK: [ROLE.PUBLIC]
     },
     '/content/content/v1/retire': {
+      description: 'API to delete the content(s)',
       checksNeeded: ['ROLE_CHECK'],
       ROLE_CHECK: [
         ROLE.ADMIN,
         ROLE.BOOK_REVIEWER,
-        ROLE.CONTENT_REVIEWER
+        ROLE.CONTENT_REVIEWER,
+        ROLE.CONTENT_CREATOR,
+        ROLE.BOOK_CREATOR,
+        ROLE.COURSE_CREATOR
       ]
     },
     '/content/content/v1/reject': {
@@ -1188,6 +1192,12 @@ const API_LIST = {
     '/getGeneralisedResourcesBundles/:lang/:fileName': {
       checksNeeded: []
     },
+    '/v1/desktop/handleGauth': {
+      checksNeeded: []
+    },
+    '/v1/desktop/google/auth/success': {
+      checksNeeded: []
+    },
     '/service/health': {
       checksNeeded: []
     },
@@ -1228,6 +1238,11 @@ const API_LIST = {
       ROLE_CHECK: [ROLE.ALL, ROLE.PUBLIC]
     },
     '/discussion/forum/v2/create': {
+      checksNeeded: [],
+      ROLE_CHECK: [ROLE.ALL, ROLE.PUBLIC]
+    },
+    '/discussion/forum/v2/remove': {
+      description: 'API to remove category id attached to a batch/course ',
       checksNeeded: [],
       ROLE_CHECK: [ROLE.ALL, ROLE.PUBLIC]
     },
