@@ -1514,15 +1514,15 @@
   resolved "https://registry.yarnpkg.com/@project-sunbird/sb-styles/-/sb-styles-0.0.8.tgz#66c11fc6cdcf2761680b8ccd76af929a5a0226a7"
   integrity sha512-CU7lkBEg7J3b9urACPY5jf8GJa6ccyCLETncvssXUO7Kco7uhMvlUXr3HHc5mS+Zw1G3ZtcCN8fp2XszukNA2A==
 
-"@project-sunbird/sb-themes@0.0.11":
-  version "0.0.11"
-  resolved "https://registry.yarnpkg.com/@project-sunbird/sb-themes/-/sb-themes-0.0.11.tgz#91d48e9f4d975ff90a82c5d8e82b751ceda6f75b"
-  integrity sha512-+EvPSdTfqmBpfr2MAOYNIY5oOK+vc3ZAhmXCG0/zPQBQ7yL8+G4hNZeStitAPZjcmRO9W6vecBTkdtu5Qu2EdA==
+"@project-sunbird/sb-themes@0.0.15":
+  version "0.0.15"
+  resolved "https://registry.yarnpkg.com/@project-sunbird/sb-themes/-/sb-themes-0.0.15.tgz#e860204a970905160ad7da35b82883220e1efd88"
+  integrity sha512-+0AiFR5vVpnfj6fEoKUovIZ3iRlB329jf5BKb20CFjcW3uJriIKzZOlBa1KSyqhp7f5SX3RTN4+u/NSoBRsAXg==
 
-"@project-sunbird/sunbird-collection-editor-v9@4.1.18":
-  version "4.1.18"
-  resolved "https://registry.yarnpkg.com/@project-sunbird/sunbird-collection-editor-v9/-/sunbird-collection-editor-v9-4.1.18.tgz#f762acad7173e136a8d13f6b96bb6b8313a0af01"
-  integrity sha512-1S3tPyP+qiYXmZbBnATCtKoKtCAQKDymfDf3bqqND9QwrQzaOplE1pf0QxXi6Yx4x1Ntyx+dXEpJnA65NEApng==
+"@project-sunbird/sunbird-collection-editor-v9@4.1.21":
+  version "4.1.21"
+  resolved "https://registry.yarnpkg.com/@project-sunbird/sunbird-collection-editor-v9/-/sunbird-collection-editor-v9-4.1.21.tgz#33645295572e4edd5d8061a052938acedef09a52"
+  integrity sha512-/+zOfZJO0Nd8mf6iHcRCuqeNY0TAwRnLoBLN4/1Z2VaHZNGB6rEqGaK6zzQFWevd+FKtIGt+/alQTBFp5npkww==
   dependencies:
     tslib "^1.10.0"
 
@@ -1545,6 +1545,11 @@
   resolved "https://registry.yarnpkg.com/@project-sunbird/sunbird-player-sdk-v9/-/sunbird-player-sdk-v9-4.1.2.tgz#d6fe1ca1a7d3b1e46dac79ea8f40b5dc34402858"
   integrity sha512-kKMjaC6/hhOyPuab1bMJ58Aisuy8oSAoWNGxejdz34zBwXTYJDSFI77FN+/MTJP/MgLRTLty2GEHA7NyKWxkLg==
 
+"@project-sunbird/sunbird-player-sdk-v9@4.1.3":
+  version "4.1.3"
+  resolved "https://registry.yarnpkg.com/@project-sunbird/sunbird-player-sdk-v9/-/sunbird-player-sdk-v9-4.1.3.tgz#0ab6a267afc6c6ee29ed411a7c5ec18edfd7febd"
+  integrity sha512-k+BpsHiBVdACUEIHJsFgPuoR73cQh11VFW8RO6+Sw6v3wUsdXsu0sLnV9dlUP5Y03SvZago/5D+KnWQ7IQ+tLg==
+
 "@project-sunbird/sunbird-question-editor@0.0.9":
   version "0.0.9"
   resolved "https://registry.yarnpkg.com/@project-sunbird/sunbird-question-editor/-/sunbird-question-editor-0.0.9.tgz#49f0c79397f35b993ab6f5ed6d05499db8fde91c"
@@ -1552,19 +1557,19 @@
   dependencies:
     tslib "^1.9.0"
 
-"@project-sunbird/sunbird-quml-player-v9@4.1.14":
-  version "4.1.14"
-  resolved "https://registry.yarnpkg.com/@project-sunbird/sunbird-quml-player-v9/-/sunbird-quml-player-v9-4.1.14.tgz#9a06613ceaa7fc479d1ce2ef7e257ee08dc665f7"
-  integrity sha512-PebIOkUQNhADY6UXfAMy4mYFw3Qh75n8asDfQVUFV1CDAi/omp0CmdvYhygC38na0WoDoGnkZAzKjmjMUWoKwg==
+"@project-sunbird/sunbird-quml-player-v9@4.1.18":
+  version "4.1.18"
+  resolved "https://registry.yarnpkg.com/@project-sunbird/sunbird-quml-player-v9/-/sunbird-quml-player-v9-4.1.18.tgz#9dbd3c5594edc4a506ca6acfb04b00b2fb461e54"
+  integrity sha512-uyxnivfxaVEN0LRNqanO+SZ+V6nVqgJArGVcMtOA39PJJdchtSGZodY5S29ceSygtHAutFiPSzxwB0Gox4NWEQ==
   dependencies:
     "@project-sunbird/sunbird-player-sdk-v9" "4.1.2"
 
-"@project-sunbird/sunbird-video-player-v9@4.1.5":
-  version "4.1.5"
-  resolved "https://registry.yarnpkg.com/@project-sunbird/sunbird-video-player-v9/-/sunbird-video-player-v9-4.1.5.tgz#e0d259d174456abaf2a1f18815f1038e2b648ad0"
-  integrity sha512-fLg1s6DQvZrEJswgq6m337PD6eQNfLQvrz20vH6IjKoCfEFhpv3Pk9izRiRyMDrluk+vtl7lqB0bkviYG8H83g==
+"@project-sunbird/sunbird-video-player-v9@4.1.6":
+  version "4.1.6"
+  resolved "https://registry.yarnpkg.com/@project-sunbird/sunbird-video-player-v9/-/sunbird-video-player-v9-4.1.6.tgz#755a42aced64a00b818ace4924e66f83301ceadb"
+  integrity sha512-cBSTotcNLws5lYUxOgV74C7Wvodsujy3bM9pnYXalf18Z3/DRyIU4Jcc0+2FSuEKDeAZKCuB+zqBzSmkTW41Fg==
   dependencies:
-    "@project-sunbird/sunbird-player-sdk-v9" "4.1.2"
+    "@project-sunbird/sunbird-player-sdk-v9" "4.1.3"
 
 "@project-sunbird/telemetry-sdk@0.0.26":
   version "0.0.26"
